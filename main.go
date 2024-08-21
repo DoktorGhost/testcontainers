@@ -1,13 +1,13 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"github.com/joho/godotenv"
 	"log"
 	"taskTest/internal/config"
 	"taskTest/internal/entity"
 	"taskTest/internal/storage/psg"
+	"taskTest/internal/usecase"
 )
 
 func main() {
@@ -24,30 +24,38 @@ func main() {
 	}
 
 	//подключение к бд
-	db, err := psg.NewPostgresStorage(conf)
-
+	db, err := psg.InitStorage(conf)
 	if err != nil {
 		log.Fatal("Ошибка подключения к бд:", err)
 	}
 
+	ucDB := usecase.NewUseCase(db)
 	log.Println("База данных запущена")
 
-	ctx := context.Background()
-
 	user1 := entity.User{
+		ID:    1557,
 		Name:  "Ivan",
 		Email: "ffgg@gsds.ru",
 	}
 
-	id, err := db.Create(ctx, &user1)
+	err = ucDB.CreateUser(&user1)
 	if err != nil {
 		log.Println(err)
 	}
 
-	us, err := db.Read(ctx, id)
+	us, err := ucDB.GetUserByID(1557)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	fmt.Println(us.Email == user1.Email)
+	user1.Name = "Xaxapuz"
+
+	err = ucDB.UpdateUser(&user1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	us, err = ucDB.GetUserByID(1557)
+	fmt.Println(us.Name == user1.Name)
 
 }
